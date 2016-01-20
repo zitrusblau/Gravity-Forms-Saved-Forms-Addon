@@ -256,7 +256,9 @@
 			if ( empty( $args['form_id'] ) )
 				return $args;
 
-			$form_id = $this->get_form_id_by_title($args['form_id']);
+			$form_id = !is_numeric($args['form_id']) ?
+								 $this->get_form_id_by_title($args['form_id']) :
+								 $args['form_id'];
 
 			if(is_null($form_id) or !$form_id)
 				return $args;
