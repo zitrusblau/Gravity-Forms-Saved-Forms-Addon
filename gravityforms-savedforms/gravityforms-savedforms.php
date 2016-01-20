@@ -3,8 +3,8 @@
 		Plugin Name: Gravity Forms Saved Forms Add-On
 		Author: Gennady Kovshenin
 		Description: Adds state to forms allowing users to save form for later
-		Version: 0.5.0.0
-		Author URI: http://codeseekah.com
+		Version: 0.5.0.1
+		Author URI: http://codeseekah.com, http://www.zitrusblau.de
 	*/
 
 
@@ -104,7 +104,7 @@
 						if ( form.enableFormState ) ShowSettingRow( '#gform_enable_form_state_on_submit_row' );
 						else HideSettingRow( '#gform_enable_form_state_on_submit_row' );
 					} ).trigger( 'change' );
-					
+
 					jQuery( '#gform_enable_form_state_on_submit' ).attr( 'checked', form.enableFormStateOnSubmit ? true : false ).change( function() {
 						form.enableFormStateOnSubmit = jQuery( '#gform_enable_form_state_on_submit' ).is( ':checked' );
 					} ).trigger( 'change' );
@@ -226,6 +226,19 @@
 		}
 
 		/**
+		 * Translate a title into a form id
+		 *
+		 * @param string $title The form title
+		 *
+		 * @return int $form_id
+		 */
+		private function get_form_id_by_title($title) {
+			global $wpdb;
+			$wpdb->forms = $wpdb->prefix."rg_form";
+			return $wpdb->get_var($wpdb->prepare("SELECT id FROM $wpdb->forms WHERE title = %s", $title));
+		}
+
+		/**
 		 * Handle a saved form restore
 		 *
 		 * Called on the `gform_form_args` filter
@@ -239,10 +252,17 @@
 		 * @return array $args
 		 */
 		public function form_restore( $args ) {
+
 			if ( empty( $args['form_id'] ) )
 				return $args;
 
-			$form = RGFormsModel::get_form_meta( $args['form_id'] );
+			$form_id = $this->get_form_id_by_title($args['form_id']);
+
+			if(is_null($form_id) or !$form_id)
+				return $args;
+
+			$form = RGFormsModel::get_form_meta( $form_id );
+
 			if ( !isset( $form['enableFormState'] ) || !$form['enableFormState'] )
 				return $args;
 
@@ -251,7 +271,7 @@
 				return $args;
 
 			if ( !isset( $_POST['gform_submit'] ) )
-				$_GET['gf_token'] = get_user_meta( $user->ID, 'has_pending_form_' . $args['form_id'] );
+				$_GET['gf_token'] = get_user_meta( $user->ID, 'has_pending_form_' . $form_id );
 
 			return $args;
 		}
